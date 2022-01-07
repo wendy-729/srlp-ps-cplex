@@ -25,24 +25,25 @@ actNumber = 5
 # 截止日期
 dtimes = [1.5]
 # 情景数
-# scenariosSet = [10,20,50,80,100,150,200]
+scenariosSet = [10,20,50,80,100,150,200]
 # instanceSet = [2, 3, 11, 12, 13, 15, 17, 18, 19]
-instanceSet = [3, 5, 11, 12,17,18, 19, 20]
-scenariosSet = [100]
+# instanceSet = [3, 5, 11, 12,17,18, 19, 20]
+instanceSet = [1]
+# scenariosSet = [100]
 # 第几组数据
 for group in range(1, 2):
     # 第几个实例
     # for instance in instanceSet:
-    for instance in range(1, 21):
+    for instance in range(1, 2):
         for dtime in dtimes:
             # 情景数
             for nscen in scenariosSet:
                 # 写入实验结果文件
-                filename = r'C:\Users\ASUS\Desktop\model_result_final\J' + str(actNumber)  + '\\' + 'new_linear'+ '_dt_' + str(dtime) + '.txt'
+                filename = r'C:\Users\ASUS\Desktop\SRLP-PS-two-linear-model\linear2\J' + str(actNumber)  + '\\' + 'new_linear'+ '_dt_' + str(dtime) + '.txt'
                 with open(filename, 'a', newline='') as f:
                     # 读取项目网络数据
                     if actNumber==5 or actNumber==10:
-                        fileNetwork = r'C:\Users\ASUS\Desktop\SRLP_PS数据\J' + str(actNumber) + '\\' +'项目网络数据'+'\\'+ 'J' + str(actNumber) + '_' + str(
+                        fileNetwork = r'D:\研究生资料\SRLP-PS-汇总-20211220\数据\SRLP_PS数据\J' + str(actNumber) + '\\' +'项目网络数据'+'\\'+ 'J' + str(actNumber) + '_' + str(
                             instance) + '.txt'
                     else:
                         fileNetwork = r'D:\研究生资料\RLP-PS汇总\实验数据集\PSPLIB\j' + str(actNumber) + '\\J' + str(
@@ -72,35 +73,33 @@ for group in range(1, 2):
                     est_upper, lst_upper = forwardPass(duration, projSu)
                     lftn = int(est_upper[actNo - 1] * dtime)
 
-                    # # 截止日期上界【活动的平均工期之和】
+                    # 截止日期上界【活动的平均工期之和】
+                    # 读取DE获得的最大完成时间
                     # max_lftn = sum(duration)
                     max_lftn = lftn+2
 
-
                     # 读取柔性项目结构
                     if actNumber==5 or actNumber==10:
-                        datafile = r'C:\Users\ASUS\Desktop\SRLP_PS数据\J' + str(actNumber) + '\\' + str(group)
+                        datafile = r'D:\研究生资料\SRLP-PS-汇总-20211220\数据\SRLP_PS数据\J' + str(actNumber) + '\\' + str(group)
+                        # print(datafile)
                     else:
                         datafile = r'D:\研究生资料\SRLP-PS汇总\数据和代码_final\SRLP-PS实验数据\J' + str(actNumber) + '\\'
 
                     # 必须执行的活动
-                    fp_mandatory = datafile+ '\\mandatory\\J' + str(actNumber) + '_' + str(
-                        instance) + '.txt'
+                    fp_mandatory = datafile + '\\mandatory\\J' + str(actNumber) + '_' + str(instance) + '.txt'
+                    # print(fp_mandatory)
                     mandatory = initfile(fp_mandatory)
                     # 可选集合
-                    fp_choice = datafile + '\\choice\\J' + str(actNumber) + '_' + str(
-                        instance) + '.txt'
+                    fp_choice = datafile + '\\choice\\J' + str(actNumber) + '_' + str(instance) + '.txt'
                     choice = initChoice(fp_choice)
                     choice = np.array(choice)
 
                     # 所有可选活动
-                    fp_choiceList = datafile  + '\\choiceList\\J' + str(actNumber) + '_' + str(
-                        instance) + '.txt'
+                    fp_choiceList = datafile  + '\\choiceList\\J' + str(actNumber) + '_' + str(instance) + '.txt'
                     choiceList = initfile(fp_choiceList)
 
                     # 依赖活动
-                    fp_depend = datafile + '\\dependent\\J' + str(actNumber) + '_' + str(
-                        instance) + '.txt'
+                    fp_depend = datafile + '\\dependent\\J' + str(actNumber) + '_' + str(instance) + '.txt'
                     depend = initChoice(fp_depend)
                     depend = np.array(depend)
 
@@ -126,17 +125,12 @@ for group in range(1, 2):
                         temp = depend[i][1:]
                         b.append(temp)
 
-                    # 更新项目结构
-                    # new_su, new_pred = newProjectData1(projSu, projPred, choiceList, actNo)
-                    # projSu = new_su
-                    # projPred = new_pred
-
                     # 读取随机工期
-                    file_duration = r'C:\Users\ASUS\Desktop\SRLP-PS随机工期\J' + str(actNumber) + '\\J' + str(
+                    file_duration = r'D:\研究生资料\SRLP-PS-汇总-20211220\数据\SRLP-PS随机工期\J' + str(actNumber) + '\\J' + str(
                         actNumber) + '_' + str(instance) + '_duration.txt'
                     stochastic_duration = initDuration(file_duration)
 
-                    # # 每个时刻的最大资源使用量，所有资源的供应量之和
+                    # 每个时刻的最大资源使用量，所有资源的供应量之和
                     max_H = sum(provide_res)
 
                     # 创建模型
@@ -145,8 +139,7 @@ for group in range(1, 2):
                     k = [i for i in range(0, res)]
                     # 资源的单位惩罚成本
                     cost = [1] * res
-                    # 资源占用量
-                    # h = [i for i in range(1, max_H + 1)]
+
                     # 截止日期
                     d = [i for i in range(0, lftn + 1)]
                     # 最大的截止日期

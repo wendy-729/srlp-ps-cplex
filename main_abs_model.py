@@ -18,16 +18,16 @@ from read_gap_data import read_gap
 # 项目中的活动数
 from newProjectData import newProjectData, newProjectData1
 
-actNumber = 10
+actNumber = 5
 # 截止日期
-dtimes = [1.5]
+dtimes = [1.2]
 # 情景数
-# scenariosSet = [10,20,50,80,100,150,200]
-scenariosSet = [100]
+scenariosSet = [10,20,50,80,100,150,200]
+# scenariosSet = [100]
 # 第几组数据
-for group in range(3, 4):
+for group in range(1, 2):
     # 第几个实例
-    for instance in range(15, 16):
+    for instance in range(1, 2):
         for dtime in dtimes:
             # 情景数
             for nscen in scenariosSet:
