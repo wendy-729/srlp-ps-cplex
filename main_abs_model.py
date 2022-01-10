@@ -20,10 +20,10 @@ from newProjectData import newProjectData, newProjectData1
 
 actNumber = 5
 # 截止日期
-dtimes = [1.2]
+dtimes = [1.0]
 # 情景数
-scenariosSet = [10,20,50,80,100,150,200]
-# scenariosSet = [100]
+# scenariosSet = [10,20,50,80,100,150,200]
+scenariosSet = [1]
 # 第几组数据
 for group in range(1, 2):
     # 第几个实例

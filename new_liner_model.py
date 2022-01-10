@@ -8,6 +8,7 @@ import numpy as np
 
 import pandas as pd
 
+from abs_objective import caculate_objective
 from backwardAll import backward, backward_update, backwordPass
 from forwardMandatory import forwardManda
 from forwardManda_update import forwardManda_update
@@ -26,6 +27,7 @@ actNumber = 5
 dtimes = [1.5]
 # 情景数
 scenariosSet = [10,20,50,80,100,150,200]
+# scenariosSet = [10]
 # instanceSet = [2, 3, 11, 12, 13, 15, 17, 18, 19]
 # instanceSet = [3, 5, 11, 12,17,18, 19, 20]
 instanceSet = [1]
@@ -185,9 +187,6 @@ for group in range(1, 2):
                     res_w = md1.binary_var_list(w, name='res')
 
 
-                    # var_list_y = [(a, b, c, e) for a in k for b in max_d for c in h for e in w]
-                    # # 资源的使用量0-1变量
-                    # y_kthw = md1.binary_var_dict(var_list_y, name='y')
                     # 资源占用量
                     u_ktw = md1.integer_var_cube(k, max_d, w, name='u')
 
@@ -209,10 +208,8 @@ for group in range(1, 2):
                     # 截止日期
                     theta_d = max_lftn
 
-                    # md1.minimize(md1.sum(
-                    #     pro_w[s] * md1.sum(cost[kk] * z_ktw[kk, tt, s]for tt in range(max_lftn + 1) for kk
-                    #                        in k) for s in w))
 
+                    # 目标函数
                     md1.minimize(md1.sum(
                         pro_w[s] * md1.sum(cost[kk] * (e_ktw[kk, tt, s]+p_ktw[kk, tt, s]) for tt in range(max_lftn + 1) for kk
                                            in k) for s in w))
@@ -297,19 +294,13 @@ for group in range(1, 2):
                         for kk in k:
                             for t in range(1, max_lftn + 1):
                                 md1.add_constraint(u_ktw[kk, t, s]-u_ktw[kk, t-1, s] == e_ktw[kk, t, s]-p_ktw[kk, t, s])
-                    # for s in w:
-                    #     duration = stochastic_duration[s]
-                    #     for kk in k:
-                    #         for t in range(1, max_lftn + 1):
-                    #             md1.add_constraint(
-                    #                 u_ktw[kk, t, s]-u_ktw[kk, t-1, s] <= z_ktw[kk, t, s]
-                    #             )
-                    #             md1.add_constraint(
-                    #                 u_ktw[kk, t-1, s] - u_ktw[kk, t, s] <= z_ktw[kk, t, s]
-                    #             )
-                    # for s in w:
-                    #     for kk in k:
-                    #         md1.add_constraint(z_ktw[kk,0,s]==u_ktw[kk,0,s])
+
+                    for s in w:
+                        duration = stochastic_duration[s]
+                        for kk in k:
+                            md1.add_constraint(e_ktw[kk,0,s]==u_ktw[kk,0,s])
+                            md1.add_constraint(e_ktw[kk,max_lftn,s]== u_ktw[kk,max_lftn,s])
+
 
 
                     # 时间参数设定
@@ -346,43 +337,45 @@ for group in range(1, 2):
                         print(instance, 'is solved')
 
                         # 写入文件
-                        # f.write(results)
+                        f.write(results)
                         # dp_value = solution.get_value(db_w)
 
-                        # # 获取每个情景的执行活动以及对应的开始时间
-                        # scenarios_act_time = []
-                        # x_it_value = solution.get_value_dict(x_itw)
-                        #
-                        # # print(x_it_value)
-                        # act_time = []
-                        # for s in range(scenarios):
-                        #     temp = []
-                        #     for key, value in x_it_value.items():
-                        #         # 情景且在该情景下执行
-                        #         if s == key[2] and value == 1:
-                        #             temp.append(key)
-                        #     scenarios_act_time.append(temp)
-                        #
-                        # # 每个情景下的执行活动和开始时间
-                        # scenario_implement_act = []
-                        # # 包含未执行活动开始时间
-                        # scenario_start_time = []
-                        #
-                        # for i in range(len(scenarios_act_time)):
-                        #     temp = scenarios_act_time[i]
-                        #     implement_act = []
-                        #     act_start_time = [0] * actNo
-                        #     for j in temp:
-                        #         # print(j)
-                        #         implement_act.append(j[0])
-                        #         act_start_time[j[0]] = j[1]
-                        #
-                        #     scenario_implement_act.append(implement_act)
-                        #     scenario_start_time.append(act_start_time)
-                        # print('随机工期', stochastic_duration[s])
-                        # print('每个情景下的开始时间', scenario_start_time)
-                        # print('每个情景对应的执行活动', scenario_implement_act)
-                        # print('截止日期', lftn)
+                        # 获取每个情景的执行活动以及对应的开始时间
+                        scenarios_act_time = []
+                        x_it_value = solution.get_value_dict(x_itw)
+
+                        # print(x_it_value)
+                        act_time = []
+                        for s in range(scenarios):
+                            temp = []
+                            for key, value in x_it_value.items():
+                                # 情景且在该情景下执行
+                                if s == key[2] and value == 1:
+                                    temp.append(key)
+                            scenarios_act_time.append(temp)
+
+                        # 每个情景下的执行活动和开始时间
+                        scenario_implement_act = []
+                        # 包含未执行活动开始时间
+                        scenario_start_time = []
+
+                        for i in range(len(scenarios_act_time)):
+                            temp = scenarios_act_time[i]
+                            implement_act = []
+                            act_start_time = [0] * actNo
+                            for j in temp:
+                                # print(j)
+                                implement_act.append(j[0])
+                                act_start_time[j[0]] = j[1]
+
+                            scenario_implement_act.append(implement_act)
+                            scenario_start_time.append(act_start_time)
+                        print('随机工期', stochastic_duration[s])
+                        print('每个情景下的开始时间', scenario_start_time)
+                        print('每个情景对应的执行活动', scenario_implement_act)
+                        print('截止日期', lftn)
+                        obj = caculate_objective(nscen, scenario_implement_act, scenario_start_time, res, max_lftn, req, stochastic_duration, cost)
+                        print(obj)
                         # # 每个情景下对应的执行列表
                         # # vl_set = []
                         # # for i in range(len(scenario_implement_act)):
