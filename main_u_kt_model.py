@@ -27,7 +27,7 @@ scenariosSet = [10,20,50,80,100,150,200]
 # 第几组数据
 for group in range(1, 2):
     # 第几个实例
-    for instance in range(1, 2):
+    for instance in range(1, 21):
         for dtime in dtimes:
             # 情景数
             for nscen in scenariosSet:
@@ -68,17 +68,16 @@ for group in range(1, 2):
                     lftn = int(est_upper[actNo - 1] * dtime)
                     # print(lftn)
                     # 扩大的截止日期，读取DE仿真的gap
-                    # gap_datafile = r'C:\Users\ASUS\Desktop\测试实验20211014\DE\J' + str(
-                    #     actNumber) + '\\' + '2000_sch_de_srlp_' + str(actNumber + 2) + '_dt_' + str(
-                    #     dtime) + '_main_vl_decode_gap_200.txt'
-                    # gap_d_list = read_gap(gap_datafile)
-                    # gap_d = gap_d_list[instance-1]
+                    gap_datafile = r'C:\Users\ASUS\Desktop\srlp-ps测试实验\DE\J' + str(
+                        actNumber) + '\\' + '2000_sch_de_gap_srlp_' + str(actNumber + 2) + '_dt_' + str(
+                        dtime) +'_100' + '.txt'
+                    gap_d_list = read_gap(gap_datafile)
+                    gap_d = gap_d_list[instance-1]
+                    # print(gap_d)
 
-                    gap_d = 2
+
 
                     max_lftn = lftn + gap_d
-                    # print(lftn)
-
 
                     # 读取柔性项目结构
                     if actNumber == 5 or actNumber == 10:
@@ -131,10 +130,6 @@ for group in range(1, 2):
                         b.append(temp)
                     # print("依赖活动", b)
 
-                    # 更新项目结构
-                    # new_su, new_pred = newProjectData1(projSu, projPred, choiceList, actNo)
-                    # projSu = new_su
-                    # projPred = new_pred
 
                     file_duration = r'D:\研究生资料\SRLP-PS-汇总-20211220\数据\SRLP-PS随机工期\J' + str(actNumber) + '\\J' + str(
                         actNumber) + '_' + str(instance) + '_duration.txt'
@@ -180,7 +175,7 @@ for group in range(1, 2):
                         scen_lst.append(lst_s)
 
                     # 置信度
-                    db_pro = 0.95
+                    db_pro = 0.9
                     pr_pro = 1
                     res_pro = 1
 
