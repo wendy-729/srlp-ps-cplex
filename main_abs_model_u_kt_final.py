@@ -22,19 +22,23 @@ from newProjectData import newProjectData, newProjectData1
 
 actNumber = 5
 # 截止日期
-dtimes = [1.5,1.8]
+dtimes = [1.8]
 # 情景数
-scenariosSet = [10,20,50,80,100,150,200]
-# scenariosSet = [10]
+# scenariosSet = [1]
+actSet = [1]
+actSet = [3,4,6,13,16,20]
+# scenariosSet = [10,20,50,80,100,150,200]
+scenariosSet = [200]
 # 第几组数据
 for group in range(1, 2):
     # 第几个实例
-    for instance in range(1, 21):
+    for instance in actSet:
+    # for instance in range(1, 21):
         for dtime in dtimes:
             # 情景数
             for nscen in scenariosSet:
                 # 写入实验结果文件
-                filename = r'C:\Users\ASUS\Desktop\SRLP-PS-two-linear-model\linear1\J' + str(actNumber)  + '\\' + 'new_linear'+ '_dt_' + str(dtime) + '.txt'
+                filename = r'C:\Users\ASUS\Desktop\SRLP-PS-two-linear-model-new\linear1\J' + str(actNumber)  + '\\' + 'new_linear_200_'+ '_dt_' + str(dtime) + '.txt'
                 with open(filename, 'a', newline='') as f:
                     # 读取项目网络数据
                     if actNumber == 5 or actNumber == 10:
@@ -71,15 +75,15 @@ for group in range(1, 2):
                     # print(lftn)
                     # 扩大的截止日期，读取DE仿真的gap
                     gap_datafile = r'C:\Users\ASUS\Desktop\srlp-ps测试实验\DE\J' + str(
-                        actNumber) + '\\' + '2000_sch_de_gap_srlp_' + str(actNumber + 2) + '_dt_' + str(
+                        actNumber) + '\\' + '2000_sch_de_gap_memory_srlp_' + str(actNumber + 2) + '_dt_' + str(
                         dtime) +'_100' + '.txt'
                     gap_d_list = read_gap(gap_datafile)
                     gap_d = gap_d_list[instance-1]
-                    # print(gap_d)
-
 
 
                     max_lftn = lftn + gap_d
+                    print(max_lftn)
+                    print(lftn)
 
                     # 读取柔性项目结构
                     if actNumber == 5 or actNumber == 10:
@@ -172,9 +176,13 @@ for group in range(1, 2):
                         lst_s, lft_s = backward_update(projSu, duration, max_lftn, actNo, mandatory)
                         for i in range(len(est_s)):
                             if lst_s[i]<est_s[i]:
-                                print('出错啦')
+                                est_s[i] = 0
+                                lst_s[i] = max_lftn-duration[i]
+                                # print('出错啦')
                         scen_est.append(est_s)
                         scen_lst.append(lst_s)
+                    # print(scen_est)
+                    # print(scen_lst)
 
                     # 置信度
                     db_pro = 0.9
@@ -206,18 +214,18 @@ for group in range(1, 2):
                     # 中间变量
                     z_ktw = md1.integer_var_cube(k, max_d, w, name='z')
 
-                    M = 1e3
-                    theta_pr = M
-                    theta_res = M
-                    theta_d = M
-                    # theta_pr = lftn
+                    M = 1e2
+                    # theta_pr = M
+                    # theta_res = M
+                    # theta_d = M
+                    theta_pr = max_lftn
                     # 资源
-                    # theta_res = max_H
+                    theta_res = max_H
                     # 截止日期
-                    # theta_d = lftn+1
+                    theta_d = max_lftn
 
                     md1.minimize(md1.sum(
-                        pro_w[s] * md1.sum(cost[kk] * z_ktw[kk, tt, s] for tt in range(max_lftn + 1) for kk
+                        pro_w[s] * md1.sum(cost[kk] * z_ktw[kk, tt, s] for tt in range(0, max_lftn + 1) for kk
                                            in k) for s in w))
 
                     # 虚开始活动的开始时间
@@ -243,14 +251,7 @@ for group in range(1, 2):
                         for i in b[be.index(a)]:
                             md1.add_constraint(y_i[i] == y_i[a])
 
-                    # 截止日期约束
-                    for s in range(scenarios):
-                        md1.add_constraint(md1.sum(
-                            t * x_itw[actNo - 1, t, s] for t in list(range(scen_est[s][actNo - 1], scen_lst[s][actNo - 1] + 1)
-                                 )) - theta_d * (1 - db_w[s]) <= lftn)
 
-                    # 截止日期机会约束
-                    md1.add_constraint(md1.sum(pro_w[i] * db_w[i] for i in w) >= db_pro)
 
                     # 优先关系约束
                     for s in range(scenarios):
@@ -270,7 +271,7 @@ for group in range(1, 2):
                     # 优先关系机会约束
                     md1.add_constraint(md1.sum(pro_w[i] * pr_w[i] for i in w) >= pr_pro)
 
-                    # 资源的占用量
+                    # 资源的占用量,u_kt是从0开始的，matlab是从1开始的
                     for s in range(scenarios):
                         duration = stochastic_duration[s]
                         for kk in k:
@@ -287,37 +288,47 @@ for group in range(1, 2):
                         for t in max_d:
                             for kk in k:
                                 md1.add_constraint(
-                                    u_ktw[kk, t, s] - M * (1 - res_w[s]) <= provide_res[kk]
+                                    u_ktw[kk, t, s] - theta_res * (1 - res_w[s]) <= provide_res[kk]
                                 )
 
                     # 资源限制机会约束
                     md1.add_constraint(md1.sum(pro_w[i] * res_w[i] for i in w) >= res_pro)
 
+                    # 截止日期约束
+                    for s in range(scenarios):
+                        md1.add_constraint(md1.sum(
+                            t * x_itw[actNo - 1, t, s] for t in
+                            list(range(scen_est[s][actNo - 1], scen_lst[s][actNo - 1] + 1)
+                                 )) - theta_d * (1 - db_w[s]) <= lftn)
+
+                    # 截止日期机会约束
+                    md1.add_constraint(md1.sum(pro_w[i] * db_w[i] for i in w) >= db_pro)
+
                     # 线性化目标函数
                     for s in w:
                         duration = stochastic_duration[s]
                         for kk in k:
-                            for t in range(1, max_lftn + 1):
-                                # md1.add_constraint(
-                                    # md1.sum(req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for
-                                    #         tt in list(range(max(scen_est[s][i], t - duration[i] + 1),
-                                    #                          min(t, scen_lst[s][i]) + 1))) - md1.sum(
-                                    #     req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for tt in list(
-                                    #         range(max(scen_est[s][i], t - duration[i]), min(t - 1, scen_lst[s][i]) + 1))
-                                    # ) <= z_ktw[kk, t, s])
+                            for t in range(1, max_lftn):
                                 md1.add_constraint(
-                                    u_ktw[kk,t,s] - u_ktw[kk,t-1,s] <= z_ktw[kk, t, s])
+                                    md1.sum(req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for
+                                            tt in list(range(max(scen_est[s][i], t - duration[i] + 1),
+                                                             min(t, scen_lst[s][i]) + 1))) - md1.sum(
+                                        req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for tt in list(
+                                            range(max(scen_est[s][i], t - duration[i]), min(t - 1, scen_lst[s][i]) + 1))
+                                    ) <= z_ktw[kk, t, s])
 
                                 md1.add_constraint(
-                                    u_ktw[kk, t-1, s] - u_ktw[kk, t, s] <= z_ktw[kk, t, s])
-
+                                    md1.sum(req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for tt in list(
+                                        range(max(scen_est[s][i], t - duration[i]), min(t - 1, scen_lst[s][i]) + 1))
+                                            ) - md1.sum(req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for
+                                                        tt in list(
+                                        range(max(scen_est[s][i], t - duration[i] + 1), min(t, scen_lst[s][i]) + 1))
+                                                        ) <= z_ktw[kk, t, s])
                                 # md1.add_constraint(
-                                #     md1.sum(req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for tt in list(
-                                #         range(max(scen_est[s][i], t - duration[i]), min(t - 1, scen_lst[s][i]) + 1))
-                                #             ) - md1.sum(req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for
-                                #                         tt in list(
-                                #         range(max(scen_est[s][i], t - duration[i] + 1), min(t, scen_lst[s][i]) + 1))
-                                #                         ) <= z_ktw[kk, t , s])
+                                #     u_ktw[kk, t, s] - u_ktw[kk, t - 1, s] <= z_ktw[kk, t, s])
+                                #
+                                # md1.add_constraint(
+                                #     u_ktw[kk, t - 1, s] - u_ktw[kk, t, s] <= z_ktw[kk, t, s])
 
                     for s in w:
                         for kk in k:
@@ -325,13 +336,14 @@ for group in range(1, 2):
 
 
                     # 时间参数设定
-                    md1.parameters.timelimit = 600
+                    md1.parameters.timelimit = 1800
                     # cplex在长时间得到更好的可行解时，求解可行解优先而非最优性优先
                     # md1.parameters.emphasis.mip = 2
                     # md1.parameters.mip.display = 2
                     # md1.parameters.threads = 1
 
                     solution = md1.solve()
+                    # print(solution)
                     if solution == None:
                         print('求不出解')
                         continue
@@ -351,26 +363,11 @@ for group in range(1, 2):
                             if value_temp == 1.0:
                                 temp_count += 1
                         tpcp = temp_count / nscen
-                        # print('及时完成率', tpcp)
-
-                        # 将实验结果写入文件
-                        results = str(instance) + '\t' + str(status.value) + '\t' +str(tpcp)+ '\t' + str(format(d1, '.4f')) + '\t' + str(
-                            format(cputime, '.4f')) + '\t' + str(scenarios)  + '\n'
-                        # print(req)
-                        print(results)
-                        print(instance, 'is solved')
-                        # print(req,'资源')
-                        # 写入文件
-                        f.write(results)
-
+                        # 重新计算及时完成率
                         # 获取每个情景的执行活动以及对应的开始时间
                         scenarios_act_time = []
                         x_it_value = solution.get_value_dict(x_itw)
 
-
-                        # print(db_w)
-
-                        # print(x_it_value)
                         act_time = []
                         for s in range(scenarios):
                             temp = []
@@ -397,17 +394,41 @@ for group in range(1, 2):
                             scenario_implement_act.append(implement_act)
                             scenario_start_time.append(act_start_time)
                         # print('随机工期', stochastic_duration)
-                        # print(lftn)
+                        # # print(lftn)
                         # print('每个情景下的开始时间', scenario_start_time)
                         # print('每个情景对应的执行活动', scenario_implement_act)
-                        # # 每个情景下对应的执行列表
-                        # # vl_set = []
-                        # # for i in range(len(scenario_implement_act)):
-                        # #     implement = [0] * actNo
-                        # #     temp_act = scenario_implement_act[i]
-                        # #     for j in temp_act:
-                        # #         implement[j] = 1
-                        # #     vl_set.append(implement)
-                        # # print(vl_set)
+                        # 每个情景下对应的执行列表
+                        vl_set = []
+                        for i in range(len(scenario_implement_act)):
+                            implement = [0] * actNo
+                            temp_act = scenario_implement_act[i]
+                            for j in temp_act:
+                                implement[j] = 1
+                            vl_set.append(implement)
+                        # print(vl_set)
+                        # tcp = [0]*nscen
+                        tcp = 0
+                        for s in range(nscen):
+                            duration = stochastic_duration[s]
+                            schedule = scenario_start_time[s]
+                            # 执行活动
+                            vl = vl_set[s]
+                            for i in range(actNo):
+                                if schedule[i]+duration[i]>=max_lftn:
+                                    tcp += 1
+                                    break
+                        tpcp1 = tcp/nscen
+
+
+                        # 将实验结果写入文件
+                        results = str(instance) + '\t' + str(status.value) + '\t' + str(tpcp) + '\t' +str(tpcp1)+'\t'+ str(
+                            format(d1, '.4f')) + '\t' + str(
+                            format(cputime, '.4f')) + '\t' + str(scenarios) + '\n'
+                        # print(req)
+                        print(results)
+                        print(instance, 'is solved')
+                        # print(req,'资源')
+                        # 写入文件
+                        f.write(results)
 
                         #
