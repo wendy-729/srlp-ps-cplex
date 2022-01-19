@@ -22,13 +22,13 @@ from newProjectData import newProjectData, newProjectData1
 
 actNumber = 5
 # 截止日期
-dtimes = [1.8]
+dtimes = [1.5]
 # 情景数
 # scenariosSet = [1]
-actSet = [1]
-actSet = [3,4,6,13,16,20]
+# actSet = [1]
+actSet = [13]
 # scenariosSet = [10,20,50,80,100,150,200]
-scenariosSet = [200]
+scenariosSet = [10]
 # 第几组数据
 for group in range(1, 2):
     # 第几个实例
@@ -38,7 +38,7 @@ for group in range(1, 2):
             # 情景数
             for nscen in scenariosSet:
                 # 写入实验结果文件
-                filename = r'C:\Users\ASUS\Desktop\SRLP-PS-two-linear-model-new\linear1\J' + str(actNumber)  + '\\' + 'new_linear_200_'+ '_dt_' + str(dtime) + '.txt'
+                filename = r'C:\Users\ASUS\Desktop\SRLP-PS-two-linear-model-new\linear1\J' + str(actNumber)  + '\\' + 'new_linear_'+ '_dt_' + str(dtime) + '_'+str(nscen)+'.txt'
                 with open(filename, 'a', newline='') as f:
                     # 读取项目网络数据
                     if actNumber == 5 or actNumber == 10:
@@ -79,11 +79,12 @@ for group in range(1, 2):
                         dtime) +'_100' + '.txt'
                     gap_d_list = read_gap(gap_datafile)
                     gap_d = gap_d_list[instance-1]
-
-
+                    # gap_d = 4
+                    #
+                    # lftn = 16
                     max_lftn = lftn + gap_d
-                    print(max_lftn)
-                    print(lftn)
+                    # print(max_lftn)
+                    # print(lftn)
 
                     # 读取柔性项目结构
                     if actNumber == 5 or actNumber == 10:
@@ -308,7 +309,7 @@ for group in range(1, 2):
                     for s in w:
                         duration = stochastic_duration[s]
                         for kk in k:
-                            for t in range(1, max_lftn):
+                            for t in range(1, max_lftn+1):
                                 md1.add_constraint(
                                     md1.sum(req[i][kk] * x_itw[i, tt, s] for i in list(range(1, actNo)) for
                                             tt in list(range(max(scen_est[s][i], t - duration[i] + 1),
@@ -393,10 +394,10 @@ for group in range(1, 2):
 
                             scenario_implement_act.append(implement_act)
                             scenario_start_time.append(act_start_time)
-                        # print('随机工期', stochastic_duration)
+                        print('随机工期', stochastic_duration)
                         # # print(lftn)
-                        # print('每个情景下的开始时间', scenario_start_time)
-                        # print('每个情景对应的执行活动', scenario_implement_act)
+                        print('每个情景下的开始时间', scenario_start_time)
+                        print('每个情景对应的执行活动', scenario_implement_act)
                         # 每个情景下对应的执行列表
                         vl_set = []
                         for i in range(len(scenario_implement_act)):
@@ -413,11 +414,13 @@ for group in range(1, 2):
                             schedule = scenario_start_time[s]
                             # 执行活动
                             vl = vl_set[s]
-                            for i in range(actNo):
-                                if schedule[i]+duration[i]>=max_lftn:
-                                    tcp += 1
-                                    break
-                        tpcp1 = tcp/nscen
+                            # print(vl)
+                            for i in range(actNo-1):
+                                if vl[i] == 1:
+                                    if schedule[i]+duration[i] > lftn:
+                                        tcp += 1
+                                        break
+                        tpcp1 = (nscen-tcp)/nscen
 
 
                         # 将实验结果写入文件
@@ -429,6 +432,6 @@ for group in range(1, 2):
                         print(instance, 'is solved')
                         # print(req,'资源')
                         # 写入文件
-                        f.write(results)
+                        # f.write(results)
 
                         #
