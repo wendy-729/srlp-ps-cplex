@@ -6,6 +6,7 @@ def caculate_objective(nscen, scenario_vl, scenario_schedule,resNo,deadline,req,
     for i in range(nscen):
         obj = 0
         vl = scenario_vl[i]
+        # print(vl)
         schedule = scenario_schedule[i]
         duration = scenario_duration[i]
         # print(schedule)
@@ -26,6 +27,7 @@ def caculate_objective(nscen, scenario_vl, scenario_schedule,resNo,deadline,req,
                 temp = c[k] * abs(u[k][t] - u[k][t-1])
                 obj += temp
             obj += u[k][0]
+        # all_obj+=obj
         all_obj += obj*(1/nscen)
     return all_obj
 
