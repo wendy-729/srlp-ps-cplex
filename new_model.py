@@ -34,7 +34,7 @@ scenariosSet = [100]
 for group in range(1, 2):
     # 第几个实例
     # for instance in actSet:
-    for instance in range(1, 2):
+    for instance in range(2, 3):
         # if instance in actSet:
         #     continue
         # flag = 0
@@ -78,21 +78,11 @@ for group in range(1, 2):
                     # 所有活动都执行，平均工期，计算截止日期
                     est_upper, lst_upper = forwardPass(duration, projSu)
                     lftn = int(est_upper[actNo - 1] *dtime)
-                    # print(lftn)
-                    # # 扩大的截止日期，读取DE仿真的gap
-                    # gap_datafile = r'C:\Users\ASUS\Desktop\测试实验-srlp-ps\DE\J' + str(
-                    #     actNumber) + '\\' + '1000_sch_de_gap_memory_srlp_' + str(actNumber + 2) + '_dt_' + str(
-                    #     dtime) +'_100' + '.txt'
-                    # gap_d_list = read_gap(gap_datafile)
-                    # gap_d = gap_d_list[instance-1]
-                    # print(gap_d)
-                    # gap_d = 2
 
-                    # max_lftn = lftn + gap_d
+
                     # 考虑所有活动的平均工期总和作为项目完成时间的上界
                     max_lftn = sum(duration)
-                    # print(max_lftn)
-                    # print(lftn)
+
 
                     # 读取柔性项目结构
                     if actNumber == 5 or actNumber == 10:
@@ -196,7 +186,7 @@ for group in range(1, 2):
                     # print(scen_lst)
 
                     # 置信度
-                    db_pro = 0.9
+                    # db_pro = 0.9
                     pr_pro = 0.9
                     res_pro = 0.9
 
@@ -214,12 +204,15 @@ for group in range(1, 2):
                     u_ktw = md1.integer_var_cube(k, max_d, w, name='u')
                     # u_ktw = md1.continuous_var_cube(k, max_d, w, name='u')
 
-                    # 在情景w，截止日期是否满足的二元变量
-                    db_w = md1.binary_var_list(w, name='db')
+                    # # 在情景w，截止日期是否满足的二元变量
+                    # db_w = md1.binary_var_list(w, name='db')
                     # 优先关系是否满足的二元变量
                     pr_w = md1.binary_var_list(w, name='pr')
                     # 资源约束是否满足的二元变量
                     res_w = md1.binary_var_list(w, name='res')
+                    # 线性化惩罚项的辅助变量
+                    a_w = md1.integer_var_list(w,name='a')
+                    b_w = md1.integer_var_list(w,name='b')
 
 
                     # 中间变量
@@ -237,7 +230,7 @@ for group in range(1, 2):
 
                     md1.minimize(md1.sum(
                         pro_w[s] * md1.sum(cost[kk] * z_ktw[kk, tt, s] for tt in range(0, max_lftn + 1) for kk
-                                           in k) for s in w))
+                                           in k) for s in w)+md1.sum(pro_w[s]*a_w[s] for s in w))
 
                     # 虚开始活动的开始时间
                     for s in range(scenarios):
@@ -305,16 +298,6 @@ for group in range(1, 2):
                     # 资源限制机会约束
                     md1.add_constraint(md1.sum(pro_w[i] * res_w[i] for i in w) >= res_pro)
 
-                    # 截止日期约束
-                    for s in range(scenarios):
-                        md1.add_constraint(md1.sum(
-                            t * x_itw[actNo - 1, t, s] for t in
-                            list(range(scen_est[s][actNo - 1], scen_lst[s][actNo - 1] + 1)
-                                 )) - theta_d * (1 - db_w[s]) <= lftn)
-
-                    # 截止日期机会约束
-                    md1.add_constraint(md1.sum(pro_w[i] * db_w[i] for i in w) >= db_pro)
-
                     # 线性化目标函数
                     for s in w:
                         duration = stochastic_duration[s]
@@ -344,6 +327,12 @@ for group in range(1, 2):
                     for s in w:
                         for kk in k:
                             md1.add_constraint(z_ktw[kk,0,s] == u_ktw[kk,0,s])
+                    # 线性化惩罚项
+                    for s in w:
+                        md1.add_constraint(md1.sum(
+                            t * x_itw[actNo - 1, t, s] for t in
+                            list(range(scen_est[s][actNo - 1], scen_lst[s][actNo - 1] + 1)
+                                 ))-lftn == a_w[s]-b_w[s])
 
 
                     # 时间参数设定
@@ -387,13 +376,13 @@ for group in range(1, 2):
                                 temp_res += 1
                         tcres = temp_res / nscen
 
-                        # 统计及时完成率
-                        temp_count = 0
-                        for i in db_w:
-                            value_temp = solution.get_var_value(i)
-                            if value_temp == 1.0:
-                                temp_count += 1
-                        tpcp = temp_count / nscen
+                        # # 统计及时完成率
+                        # temp_count = 0
+                        # for i in db_w:
+                        #     value_temp = solution.get_var_value(i)
+                        #     if value_temp == 1.0:
+                        #         temp_count += 1
+                        # tpcp = temp_count / nscen
                         # 重新计算及时完成率
                         # 获取每个情景的执行活动以及对应的开始时间
                         scenarios_act_time = []
@@ -457,7 +446,7 @@ for group in range(1, 2):
 
 
                         # 将实验结果写入文件
-                        results = str(instance) + '\t' + str(status.value) + '\t' +str(tcpr)+'\t' +str(tcres)+'\t' + str(tpcp) + '\t' +str(tpcp1)+'\t'+ str(
+                        results = str(instance) + '\t' + str(status.value) + '\t' +str(tcpr)+'\t' +str(tcres)+'\t' +str(tpcp1)+'\t'+ str(
                             format(d1, '.4f')) + '\t' + str(
                             format(cputime, '.4f')) + '\t' + str(scenarios) + '\t'+str(obj)+'\n'
                         # print(req)
