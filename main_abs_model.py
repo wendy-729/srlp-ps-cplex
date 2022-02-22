@@ -335,6 +335,7 @@ for group in range(1, 2):
                             md1.add_constraint(z_ktw[kk,0,s] == md1.sum(u_kthw[kk, 0, h, s] for h in list(range(1, max_H + 1))))
 
 
+
                     # 时间参数设定
                     md1.parameters.timelimit = 1200
                     # cplex在长时间得到更好的可行解时，求解可行解优先而非最优性优先

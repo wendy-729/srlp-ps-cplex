@@ -24,20 +24,20 @@ from read_gap_data import read_gap
 # 项目中的活动数
 from newProjectData import newProjectData, newProjectData1
 
-actNumber = 5
+actNumber = 10
 # 截止日期
-dtimes = [1.2]
+dtimes = [1.2,1.4]
 # 情景数
 # scenariosSet = [1]
 # actSet = [1]
 # actSet = [12,14,15,19]
 # scenariosSet = [10,30,50,80,100,150,200]
-scenariosSet = [80]
+scenariosSet = [100]
 # 第几组数据
 for group in range(1, 2):
     # 第几个实例
     # for instance in actSet:
-    for instance in range(1, 2):
+    for instance in range(2, 21):
         # if instance in actSet:
         #     continue
         # flag = 0
@@ -84,7 +84,10 @@ for group in range(1, 2):
 
 
                     # 考虑所有活动的平均工期总和作为项目完成时间的上界
-                    max_lftn = sum(duration)
+                    # max_lftn = sum(duration)
+                    max_lftn = 35
+                    print(lftn)
+                    print(max_lftn)
                     # max_lftn = lftn
 
 

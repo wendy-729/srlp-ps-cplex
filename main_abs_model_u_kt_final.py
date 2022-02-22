@@ -7,6 +7,7 @@ import numpy as np
 
 import pandas as pd
 
+from abs_objective import caculate_objective
 from backwardAll import backward, backward_update
 from forwardMandatory import forwardManda
 from forwardManda_update import forwardManda_update
@@ -22,23 +23,28 @@ from newProjectData import newProjectData, newProjectData1
 
 actNumber = 5
 # 截止日期
-dtimes = [1.5]
+dtimes = [1.2]
 # 情景数
 # scenariosSet = [1]
 # actSet = [1]
-actSet = [13]
-# scenariosSet = [10,20,50,80,100,150,200]
+# actSet = [12,14,15,19]
 scenariosSet = [10]
+# scenariosSet = [5]
 # 第几组数据
 for group in range(1, 2):
     # 第几个实例
-    for instance in actSet:
-    # for instance in range(1, 21):
+    # for instance in actSet:
+    for instance in range(1, 2):
+        # if instance in actSet:
+        #     continue
+        # flag = 0
         for dtime in dtimes:
             # 情景数
             for nscen in scenariosSet:
+                # flag_scen  = 0
                 # 写入实验结果文件
-                filename = r'C:\Users\ASUS\Desktop\SRLP-PS-two-linear-model-new\linear1\J' + str(actNumber)  + '\\' + 'new_linear_'+ '_dt_' + str(dtime) + '_'+str(nscen)+'.txt'
+                filename = r'C:\Users\ASUS\Desktop\测试实验-srlp-ps\CPLEX\J'+ str(actNumber)+'\\'+'new_linear_test'+ '_dt_' + str(dtime) + '_'+str(nscen)+'.txt'
+                # filename = r'C:\Users\ASUS\Desktop\SRLP-PS-two-linear-model-new\linear1\J' + str(actNumber)  + '_Pr_1\\' + 'new_linear_test'+ '_dt_' + str(dtime) + '_'+str(nscen)+'.txt'
                 with open(filename, 'a', newline='') as f:
                     # 读取项目网络数据
                     if actNumber == 5 or actNumber == 10:
@@ -71,20 +77,22 @@ for group in range(1, 2):
 
                     # 所有活动都执行，平均工期，计算截止日期
                     est_upper, lst_upper = forwardPass(duration, projSu)
-                    lftn = int(est_upper[actNo - 1] * dtime)
+                    lftn = int(est_upper[actNo - 1] *dtime)
                     # print(lftn)
-                    # 扩大的截止日期，读取DE仿真的gap
-                    gap_datafile = r'C:\Users\ASUS\Desktop\srlp-ps测试实验\DE\J' + str(
-                        actNumber) + '\\' + '2000_sch_de_gap_memory_srlp_' + str(actNumber + 2) + '_dt_' + str(
-                        dtime) +'_100' + '.txt'
-                    gap_d_list = read_gap(gap_datafile)
-                    gap_d = gap_d_list[instance-1]
-                    # gap_d = 4
-                    #
-                    # lftn = 16
-                    max_lftn = lftn + gap_d
-                    # print(max_lftn)
-                    # print(lftn)
+                    # # 扩大的截止日期，读取DE仿真的gap
+                    # gap_datafile = r'C:\Users\ASUS\Desktop\测试实验-srlp-ps\DE\J' + str(
+                    #     actNumber) + '\\' + '1000_sch_de_gap_memory_srlp_' + str(actNumber + 2) + '_dt_' + str(
+                    #     dtime) +'_100' + '.txt'
+                    # gap_d_list = read_gap(gap_datafile)
+                    # gap_d = gap_d_list[instance-1]
+                    # print(gap_d)
+                    # gap_d = 2
+
+                    # max_lftn = lftn + gap_d
+                    # 考虑所有活动的平均工期总和作为项目完成时间的上界
+                    max_lftn = sum(duration)
+                    print(max_lftn)
+                    print(lftn)
 
                     # 读取柔性项目结构
                     if actNumber == 5 or actNumber == 10:
@@ -174,7 +182,9 @@ for group in range(1, 2):
                         duration = stochastic_duration[s]
                         # 正向计算，只考虑必须执行活动
                         est_s, eft_s = forwardManda(duration, projSu, mandatory, actNo, projPred)
+                        # est_s = [0]*actNo
                         lst_s, lft_s = backward_update(projSu, duration, max_lftn, actNo, mandatory)
+                        # lst_s = [max_lftn-duration[i] for i in duration]
                         for i in range(len(est_s)):
                             if lst_s[i]<est_s[i]:
                                 est_s[i] = 0
@@ -187,8 +197,8 @@ for group in range(1, 2):
 
                     # 置信度
                     db_pro = 0.9
-                    pr_pro = 1
-                    res_pro = 1
+                    pr_pro = 0.8
+                    res_pro = 0.8
 
                     # 情景
                     w = [i for i in range(0, scenarios)]
@@ -344,7 +354,7 @@ for group in range(1, 2):
                     # md1.parameters.threads = 1
 
                     solution = md1.solve()
-                    # print(solution)
+                    print(solution)
                     if solution == None:
                         print('求不出解')
                         continue
@@ -356,6 +366,26 @@ for group in range(1, 2):
                         status = solution.solve_status
                         # 计算时间
                         cputime = solution.solve_details.time
+                        # if cputime>1800:
+                        #     flag = 1
+                        #     flag_scen = 1
+                        # if flag_scen==1:
+                        #     continue
+
+                        # 统计优先关系
+                        temp_pr = 0
+                        for i in pr_w:
+                            value_temp = solution.get_var_value(i)
+                            if value_temp == 1.0:
+                                temp_pr += 1
+                        tcpr = temp_pr/nscen
+                        # 统计资源
+                        temp_res = 0
+                        for i in res_w:
+                            value_temp = solution.get_var_value(i)
+                            if value_temp == 1.0:
+                                temp_res += 1
+                        tcres = temp_res / nscen
 
                         # 统计及时完成率
                         temp_count = 0
@@ -394,10 +424,10 @@ for group in range(1, 2):
 
                             scenario_implement_act.append(implement_act)
                             scenario_start_time.append(act_start_time)
-                        print('随机工期', stochastic_duration)
-                        # # print(lftn)
-                        print('每个情景下的开始时间', scenario_start_time)
-                        print('每个情景对应的执行活动', scenario_implement_act)
+                        # print('随机工期', stochastic_duration)
+                        # # # print(lftn)
+                        # print('每个情景下的开始时间', scenario_start_time)
+                        # print('每个情景对应的执行活动', scenario_implement_act)
                         # 每个情景下对应的执行列表
                         vl_set = []
                         for i in range(len(scenario_implement_act)):
@@ -421,17 +451,22 @@ for group in range(1, 2):
                                         tcp += 1
                                         break
                         tpcp1 = (nscen-tcp)/nscen
+                        # 计算目标函数值
+                        obj = caculate_objective(nscen, scenario_implement_act, scenario_start_time,res,max_lftn,req,stochastic_duration[0:nscen],cost)
+                        # print(obj)
 
 
                         # 将实验结果写入文件
-                        results = str(instance) + '\t' + str(status.value) + '\t' + str(tpcp) + '\t' +str(tpcp1)+'\t'+ str(
+                        results = str(instance) + '\t' + str(status.value) + '\t' +str(tcpr)+'\t' +str(tcres)+'\t' + str(tpcp) + '\t' +str(tpcp1)+'\t'+ str(
                             format(d1, '.4f')) + '\t' + str(
-                            format(cputime, '.4f')) + '\t' + str(scenarios) + '\n'
+                            format(cputime, '.4f')) + '\t' + str(scenarios) + '\t'+str(obj)+'\n'
                         # print(req)
                         print(results)
                         print(instance, 'is solved')
                         # print(req,'资源')
                         # 写入文件
-                        # f.write(results)
+                        f.write(results)
+        # if flag==1:
+        #     continue
 
-                        #
+
